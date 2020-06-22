@@ -1,0 +1,46 @@
+BYPASSING AUTHENTICATION MECHANISM
+
+	VERBOSE FAILURE MESSAGES
+		When logging in the user-authentication process, look at failure messages when you submit a wrong userid or password or wrong userid and password. This way you could lead a path to username enumeration if failure message for userid and password is different.
+
+		If username enumeration os not possible from the main login page, then try accessing pages like forgot password and change password, look at the failure message and success messgae for wrong and correct userid respectively. If messages are different then make a list of usernames and enumerate username for application.
+
+		For correct usernames, try one common password and try it for all the usernames using an automated tool or Burp Intruder. In case if account got blocked after 3 wrong logins, then try changing cookies and add X-Forwarded For header.
+		Also look for usernames and accounts present in comments of the source page in the site.
+
+		Note: If you don't find any kind of differnce in failure messages then use Burp Comparer. Make two responses one failed login with correct id and one failed login with wrong id and then send those responses to Burp Comparer. You might find  a difference in the source code of the pages. Note, sometimes even after account locked the logins are continuously going on and this way you can just continue your bruteforcing without worrying for IP blocking or account blocking. Just send responses to Comparer and even account is blocked, you might get different responses..
+
+	HTTP Login Page
+		If you found a login page which is HTTP not HTTPS then is the attacker is on the same network like in a library or on airport, then he can use WireShark and sslstrip to see the credentials in plaintext.
+
+		If you find this kind of vulnerability report it to organisation immediately. One more thing sometimes you will see that logging in using main login page is HTTPS secured but when you login using like seeing a comment and it requires a login then you see that login page is HTTP not HTTPS then you can just use that page to steal login credentials of victim if you are on the same network.
+
+	BRUTEFORCING AT PASSWORD CHANGE PAGE (IMPORTANT) Page No-172
+		Login with your valid credentials and go to password change functionality, there if you have a parameter named username then try plucking in usernames of victims and for current password try a wordlist and type new pass and confirm new pass values, sometimes you are able to chnage the password of your victim using this technique		
+
+	BRUTEFORCING AT FORGOTTEN PASSWORD PAGE
+		This page is very helpful in username enumeration. 
+
+		If there is no such email or OTP sent to your physical device, instead asked a question or secret question or captcha for forgotting pass, then it is easiest way to login into victim's account. This vulnerability can be reported easily to the company.
+
+		Sometimes in forgotten pass page, username parameter is not provided and email is send directly to the user's account, now in some cases you will see the source code and username input is hidden or hidden in a cookie. If this is the scene then login with your own credentials and go to forgot pass page and in that hidden field try your victim's username and becuase you logged in with your own account then email will be sent to your emialid and you will be able to change victime's password just by modifying that hidden field or cookie.	
+
+	REMEMBER ME FUNCTIONALITY
+		Some login pages gives you remember me functionality and if you logged in then you will see a remember me Cookie like Remember Me:user-name, just change the username to victime's username and you will be redirected to victim's account without any kinf of loggin in required. Cookie could be like this Remember Me:6578 this is the identifier for the username use another number and you will be logged in as someone else's account. This vulnerability is easy to discover nowdays and is a expensive bug.
+
+		Note: This remember me function could me in a web browser extension or stored somewhere else in the client side web page or client side technologies, intercept for everything and modify everything.
+
+	USER IMPERSONATION FACILITY
+		In many websites there are privileges given to accounts, like a normal user will given a user privilege and an admin user have a privilege of admin or root. After logging in try to look out at Cookies or hidden fields like 
+		Logged In As: user
+		Hidden URLs like /admin/ImpersonateUser.jsp
+		Also look at cookies and hidden fields thiese user privileges could be present there, modify them and see the response whethete you get a vertical privilege escalation.
+
+	HACKER'S WAY TO FIND BUG IN AUTHENTICATION
+		Make two accounts with different usernames and passwords.
+		Try all previously discussed vulnerabilities on these accounts.
+		Got Bug?? Report it!!
+
+	READ CHAPTER FOR MORE INFORMATION I HAVE NOT DISCUSSED IN DETAIL THIS CHAPTER.		
+
+

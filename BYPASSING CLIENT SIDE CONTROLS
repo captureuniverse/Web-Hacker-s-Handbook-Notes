@@ -1,0 +1,195 @@
+BYPASSING CLIENT SIDE CONTROLS
+
+	TRANSIMITTING DATA VIA THE CLIENT
+
+		HIDDEN FORM FIELDS
+
+		In many web applications, so many form fields are hidden which make the app vulnerable
+		Now suppose there is an app which has a shopping cart and the actual price in the HTML source code is hidden in form
+		Just turn on your BurpSuite interceptor and try to change the value of that field
+		This way you can get that product in lower price than the actual price
+		Note: Try to input negative value for price, this way you will get the product as well as the actual product.
+
+		HTTP COOKIES
+
+		Now this time suppose there is a cookie like
+		Set Cookie: DiscountAgreed=25
+		Try to change the cookie value from 25 to somehting like 100 and ee whether you get item for free
+		Try to make it 200 and see whether you get refund also
+
+		URL PARAMETERS
+
+		http://mdsec.net/shop/?prod=3&pricecode=32
+		If you see any kind of URL parameter then try to change it's value or try SQL queries on it
+		Use intercepting proxy to change URL parameters because in some cases request may not become successful
+		Those cases are like if page have embedded image, or the request is a POST request, etc.
+		So try Burp for everything : GOD TRICK
+
+		THE REFERER HEADER
+
+		Initial Request
+		GET /auth/472/CreateUser.ashx HTTP/1.1
+		Host: mdsec.net
+		Referer: https://mdsec.net/auth/472/User.ashx
+
+		Final Request
+		GET /auth/472/CreateUser.ashx HTTP/1.1
+		Host: mdsec.net
+		Referer: https://mdsec.net/auth/472/Admin.ashx
+
+		This will trick the application to believe that referer is not a user but an admin
+		And we will got an opportunity to create an account with admin privileges.
+
+		OPAQUE DATA
+
+		<form method=”post” action=”Shop.aspx?prod=4”>
+		Product: Nokia Infinity <br/>Price: 699
+		<br/>Quantity: <input type=”text” name=”quantity”> (Maximum quantity is 50) <br/>
+		<input type=”hidden” name=”price” value=”699”>
+		<input type=”hidden” name=”pricing_token” value=”E76D213D291B8F216D694A34383150265C989229”>
+		<input type=”submit” value=”Buy”></form>
+
+		Here as you can see the pricing_token which have the value for actual price is encrypted, this is called opaque data.
+		HACK STEP1: Visit the site and find a product with a lower price and get the encrypted value for that price
+					Paste that value here and boom! Buy product with a lower price
+		HACK STEP2: Find the source code which encrypts this string and make your own encrypted string for any price using that
+					encryption source code. But that source code generally lies server side which is not easy to gather. If that encryption function is available on client side like in comments of HTML code or in JS code comment. Then lottery!
+
+		THE ASP.NET VIEWSTATE
+		
+		There is a hidden field that is created in all the ASP.NET appplications and that is ASP.NET ViewState
+		ViewState field have information about the current page. It is a base64-encoded data, so decode it
+		It could be MAC protected which means there is a keyed hash added to base 64 encoded data 
+		To parse data from ViewState use BurpSuite is will show you a tab called ViewState just click on it
+		You will see all the data somwtimes proce for the product is also stroed in the ViewState
+		Just replace the price placed in Viewstate in Burp and try to get 200 Status Code
+
+
+	CAPTURING USER DATA: HTML FORMS
+	
+		HTML forms are the simplest and most common way to capture input from the user and submit it to the server.
+
+		LENGTH LIMITS
+
+		<form method=”post” action=”Shop.aspx?prod=1”>
+		Product: iPhone 5 <br/>Price: 449 <br/>
+		Quantity: <input type=”text” name=”quantity” maxlength=”1”> <br/>
+		<input type=”hidden” name=”price” value=”449”>
+		<input type=”submit” value=”Buy”></form>	
+
+		As you can see the quantity field have only maxlength of 1 character so only 1 to 9 numbers are possible.
+
+			HACK STEP1: Change maxlength value from 1 to 50 or 100 so that you can enter a sql query or xss script also in  
+						fields like this 
+			HACK STEP2: Remove the maxlength option from the form now there is no boundation on length.
+		
+		INTERCEPTING RESPONSES
+
+		While intercepting responses you could get a status code like 302 Not Modified 
+		That is because of two headers present in the request If-None-Match and If-Modified-Since.
+		These headers will match the Etag(sent to server if any changes are made) for any changes that is why page is not modiefied when you send a request. So if this is happening then just remove these two headers	If-None-Match and If-Modified-Since in Burp Intercept and now the results will be modified.
+
+		SCIPT BASED VALIDATION
+
+		Suppose there is a form and it doesn't submitin usual way but it submits with a function like validateForm which executes a JS code which then checks whether the quantity you entered is an integer or not.
+		
+		HACK STEP1: If there is anykind of scipt validation on any input field of the form then just turn off the JavaScript  			    in your browser and then form will be submitted without that function and those input validations checks			    are bypassed. But if the webapp functions on behalf of JavaScript then it will not run and then everything 				is messed up. 
+		HACK STEP2: Neat and Best way to bypass JavaSciprt validation checks is to put a normal value in the field and then 				enter your payload in Burp Proxy after intercepting. This way script validation check is done.
+
+		This kind of vulnerability only works if that function is present on the client side and not on the server side. 
+		So this only works if client-side scipt validation is in the form.
+
+		DISABLED ELEMENTS
+
+		<form method=”post” action=”Shop.aspx?prod=5”>
+		Product: Blackberry Rude <br/>
+		Price: <input type=”text” disabled=”true” name=”price” value=”299”> 
+		<br/>
+		Quantity: <input type=”text” name=”quantity”> (Maximum quantity is 50) <br/>
+		<input type=”submit” value=”Buy”>
+		</form>
+
+		As you can seee here Price element is disabled which means that you cannot change the value of price here so just try disabled=false and change it's value and then submit the request. You may get status code 200 or 304. If the application performs a server side check before carrying out the requested action then this may not work because we are working on client side controls.
+
+
+IMPORTANT: If an application is fast that means most of the processing is done on client side because if it is done on server side then there will be so many requests sending back and forth to the server which will make the application slower. And modern websites focus on there speed and design of the website as their core feature. That is why i think in modern sites finding client side controls is easy and these are vulnerable.
+
+	CAPTURING USER DATA: BROWSER EXTENSIONS
+
+		A website could have a browser extension running in the background which do processing on client side and makes the application faster. Discover these extensions and exploit them.
+
+		COMMON BROWSER EXTENSION TECHNOLOGIES FOR WEBAPPS
+
+		Most popular browser extension technologies are Java applets, Flash and Siilverlight.
+
+		APPROACHES TO BROWSER EXTENSIONS
+
+		1-> Intercept the webpage as a normal webpage and intercept and modify the requests made by the component and requests received from the server. This is the easiest and quickest way but this way has limitations. The data being transmitted could be obfuscated or serialised in the technology that the component is using. 
+
+		2-> You can target the component itself directly and attempt to decomplie it's bytecode(compiled form of the source code so that JVM can access the low-level byte code) to view the original source code, or interact directly with the component using the debuger. Second way is so much effective, you will see everything and interpret anything but this is time consuming and requires good knowledge of programming in which browser extension is coded.
+
+		Combination of both these techniques is appropriate.
+
+		INTERCEPTING TRAFFICS FROM BROWSER EXTENSIONS
+
+		If you are using Burp interceptor the it is the usual way like HTML form, you will get data from that componet and you will have all the fields and their values here. Just modify them in the usual way, there could be user credentials in plain text form modify them and see responses.
+
+		In other cases you may got problems: Then do these thing
+
+			HANDLING SERIALISED DATA
+				Serialised Data: Conversion of objects into bytes(like Javascript to JSON)
+
+				Example: You are intercepting a browser extension and then you see some king of fuctions serialised, so deserialise them (convert them form string to objcts back). Then modify the methods used in objects to fill the form and then serialise the modified data again and pass that final serialised code into intercepter. But depending on the technology used in the extension, you need to understand all kinds of serialisation.
+
+					JAVA SERIALISATION
+						Content-Type: application/x-java-serialized-object
+
+						Dser is a handy plug-in to BurpSuite that provides a framework for viewing and manipulating serialised Java objects that have been intercepted within Burp.
+
+						http://blog.andlabs.org/2010/09/re-visiting-java-de-serialization-it.html
+
+						This tool converts the Java objects into XML format for easy editing. When you have modified the relevant data, Dser then reserialises the object and updates the HTTP request accordingly.
+
+					FLASH SERIALISATION
+						Content-Type: application/x-amf
+
+						Burp natively supports AMF format(inbuilt). When it identifies a HTTP request containing serialised AMF data, it unpacks the content and shows a AMF tab in the intercept section of BurpSuite where it presents deserialised data in  tree format and then modify the relevant primary data items and then AMF automatically reserialises it and sends the request.
+
+					SILVERLIGHT SERIALISATION
+						Content-Type: application/soap+msbin1
+
+						Silverlight client components using WCF typically employ Microsoft’s .NET Binary Format for SOAP (NBFS)
+
+						A plug-in is available for Burp Proxy that automatically deserializes NBFS-encoded data before it is displayed in Burp’s interception window. After you have viewed or edited the decoded data, the plug-in re-encodes the data before it is forwarded to the server or client to be processed.
+
+						The WCF binary SOAP plug-in for Burp was produced by Brian Holyfi eld and is available to download here:
+						www.gdssecurity.com/l/b/2009/11/19/wcf-binary-soap-plug-in-for-burp/	
+
+					OBSTACLES TO INTERCEPTING TRAFFIC FROM BROWSER EXTENSIONS
+					
+						If browser extension components are not being intercepted by your proxy, then this is due to some issues with component handling of HTTP proxies or SSL.
+
+						You need to modify your computer’s hosts fi le to achieve the interception and confi gure your proxy to support invisible proxying and automatic redirection to the correct destination host. And also use only CA certificate provided by burpsuite.	
+
+						If the component is using a normal serialisation then you can use plug ins already present in Burp, but if they have some encoding or encryption mechanism then you need to decompile and debug the serialised code.
+
+		DECOMPILING BROWSER EXTENSIONS(Read the chapter again for softwares and tools used for decompilation and other things)
+		
+			1.   Use the techniques describedin the book to download the component’s bytecode, unpack it, and decompile it into source code.
+			
+			2.   Review the relevant source code to understand what processing is being performed.
+			
+			3.   If the component contains any public methods that can be manipulated to achieve your objective, intercept an HTML response that interacts with the component, and add some JavaScript to invoke the appropriate methods using your input.
+			
+			4.   If not, modify the component’s source code to achieve your objective, and then recompile it and execute it, 
+			either in your browser or as a standalone program.
+
+			5.   If the component is being used to submit obfuscated or encrypted data to the server, use your modified version of the component to submit various suitably obfuscated attack strings to the server to probe for vulnerabilities, as you would for any other parameter.	
+
+			You should reread whole section to full understand this concept because i have made less notes on it. There are so many things that are missing But the trick is simple, decompile bytecode /read sourcecode/modify source code /recompile source code/ send modified bytecode to browser.
+
+		NATIVE CLIENT COMPONENTS
+		
+			read this section also because this section is a little bit advanced section which is also not explained in this book fully but read this section.
+
+				
