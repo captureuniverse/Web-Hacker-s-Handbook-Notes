@@ -1,0 +1,88 @@
+ATTACKING SESSION MANAGEMENT
+
+	THE NEED FOR STATE(OR SESSION)
+		Few years back, web developers only deal with static HTML pages but today they need to deal with authentication, multimedia content and animated pages. In today' s web applications if you logged in once into website then that will persist your logged session till you logout or till the session expires. If an attacker compromises a session of a user then he don't need to authenticat himself as that user, attacker bypassesd authentication as well as got the user's session automatically. Compromised Session Management is a serious vulnerability for today's websites.
+
+		Example:
+			For a new client
+			HTTP Header like this-> Set-Cookie: ASP.NET_SessionId=mza23dffr69skadncd2kjndkd34kjncd3kjbnkjdc3453
+			For subsequent requests
+			HTTP Header like this -> Cookie: ASP.NET_SessionId=mza23dffr69skadncd2kjndkd34kjncd3kjbnkjdc3453
+
+		NOTE: If the user is unauthenticated for  a particular session then attacker may still be able to view sesitive information submitted by the user during her session.
+		
+		HOW SESSIONS ARE CREATED: Commmercial web servers and web application platforms implement their own off-the-shelf session management based on HTTP cookies. They provide APIs that web apps developers can use to integrate their own session dependent functionality.
+
+		VULNERABILITIES IN SESSION MANAGEMENT MECHANISM
+			Weakness in the generation of session tokens.
+			Weakness in the handling of session tokens throughout their life cycle.
+
+		NOTE: Do not assume that what you see as the session-cookie is used for session managememnt, that sesions are tracked only using one item without proving it. Sometimes what appears to be as the session cookie is actually not used for session management.
+
+		NOTE: Observe which new items are passed to the browser after authentication. Often, new session tokens are created after a user authenticates herself. 
+
+		ALTERNATIVE TO SESSIONS(Pg no. 208 for more)
+			->HTTP Authentication	
+			->Sessionless state mechanism
+
+		WEAKNESSES IN TOKEN GENERATION
+
+			MEANINGFUL TOKENS
+				Example: See this token: 757365723d6461663b6170703d61646d696e3b646174653d30312f31322f3131
+				Long string but as you can see it contains only numbers and a,b,c,d,e,f which indicates that it may be hex-encoded
+				Decoded String using hexadecimal to text convertor: user=daf;app=admin;date=01/12/11
+
+					-> Attackers can exploit this by making a list of guesses sessions of application users and encoding that list. And test them to confirm that they are valid.
+
+				NOTE: Common encoding schemes used on tokens are XOR, Base64 and hexadecimal representation.
+					  Sometimes only user and app is encoded andd date is not. This can be detected easily and decode the substring then only not whole token.
+
+					  	Use "char frobber" present in payload type of Burp Intruder to modify a token's value in one character at a time.
+
+				NOTE: Register on website with two similar usernames(universe, universef), this way you can see the difference in session tokens easily as the username is not so much different.
+
+			PREDICTABLE TOKENS
+				Some session tokens do not contain any meaningful data associating them with a particular user. Instead, they are huessed becuase they contain sequences or patterns for every user.
+
+				Vulnerabilities related to predictable tokens are easy to discover. Make 1000 random predictable tokens and attack, even if you guessed one per 1000, it's a bug. These types of tokens are created using pseudo random technique and are so much random, so making a list of random tokens can work.
+
+				SOURCES OF PREDICTABLE TOKENS
+					->Concealed sequences
+					->Time dependency
+					->Weak random number generation
+
+					CONCEALED SEQUENCES
+						Example: Token: lwjVJA and Ls3Ajg from two different users. Base64Decode gives: --Õ$ adn .ÍÀŽ after hexadecimal encoding of decoded text 9708D524 and 2ECDC08, then subtract each number from the previous one: FF97C4EB6A and 97C4EB6A
+					  	
+					  	If you do same for more tokens then pattern is: 0x97C4EB6A
+
+					TIME DEPENDENCY
+						Tokens are created using milliseconds of current system. And pattern is clearly visible in token.
+
+
+		NOTE: You don't need to manually check these encodings for tokens. Use BurpSequencer for capturing tokens and then perform statistical analysis on the tokens. Intercept a request in the proxy and send it to sequencer and then define token id there and then start capturing tokens and then analysis tokens. Minimum sample size that Burp requires is 100 tokens, but to achieve compliance with FIPS tests for randomness, you need to obtain a sample of 20000 tokens. This is the largest sample size that Burp suuports.
+
+		NOTE: Clear all your cookies in browser before intercepting cookies in Burp.			
+
+		ENCRYPTED TOKENS(Read more in the book)
+			->ECB Ciphers
+			->CBC Ciphers(use bit flipper payload type in Burp to exploit this type of session id)-Page no. 228
+
+	DISCLOSURE OF TOKENS ON THE NETWORK		
+	
+	NOTE: If there is any page which is HTTP not HTTPS then this may reveal the token in plaintext format and an attacker can eavesdrop on the token using tools like wireshark. Then attacker can use that token over HTTPS page of the same site. So browse the whole site completely and find any HTTP page which you can find.		
+
+Dorking: inurl:"Login;jsessionid=" on exploit-db.com
+		
+	NOTE: Sometimes if you click on remember me functionality, then it will generate a static token each time you log in and static tokens lack session management concept and are highly vulnerable.			
+
+	NOTE: Copy a session cookie and log out from your account, then in repeater paste that session cookie and see whether it still gives a logged in session. This is vulnerable to session hijacing attack. Hijack session ids and use them anytime wven after logging-out.
+
+	NOTE:Never store cookies in URL, this way an attacker can just steal that URL and try it in his machine to access your session.
+
+	Read the last HACK STEP of this chapter very useful.
+
+	
+
+
+
